@@ -207,6 +207,6 @@ marimo/_lsp/
 __marimo__/
 test.py
 testing.ipynb
-datasets
 .DS_Store
 /docs
+/btc
