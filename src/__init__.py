@@ -1,0 +1,1 @@
+"""Trading signals research package."""
