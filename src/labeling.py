@@ -1,7 +1,8 @@
 """Local extrema labeling.
 
-The label uses both past and future bars – it is only used to build the
-training target. At prediction time we never touch future bars.
+The label uses both past and future bars and, when directional filters are
+enabled, the bar's ``close`` vs ``open``---this is target construction only;
+at prediction time features use closed history plus ``open[i]`` only.
 
 Two variants are provided:
 
@@ -14,6 +15,8 @@ Two variants are provided:
     the lowest over ``window`` bars on each side and the surrounding move
     exceeds ``k * ATR`` where ATR is an estimate of bar volatility.  This
     adapts the threshold to the asset/time frame instead of a fixed alpha.
+    By default a minimum also requires ``close > open`` and a maximum
+    ``close < open`` (targets only; not used as features at ``open[i]``).
 """
 from __future__ import annotations
 
@@ -33,7 +36,7 @@ def mark_simple_extrema(
     df: pd.DataFrame,
     window: int = 4,
     alpha: float = 0.001,
-    require_candle_direction: bool = False,
+    require_candle_direction: bool = True,
     session_aware: bool = True,
 ) -> pd.DataFrame:
     """Mark local min/max using the strict fractal rule.
@@ -48,9 +51,10 @@ def mark_simple_extrema(
         Minimum relative move that must be observed vs. the bar that is
         ``window`` steps away (on each side).
     require_candle_direction
-        If True, reproduce the original behaviour (min only on bullish
-        candles, max only on bearish candles).  Default is False to widen
-        the positive set.
+        If True (default), label a local min only when
+        ``close[i] > open[i]`` (long idea) and a max only when
+        ``close[i] < open[i]`` (short idea).  Set False to match older
+        notebooks that used structure alone.
     """
     out = df.copy()
     n = len(out)
@@ -63,9 +67,8 @@ def mark_simple_extrema(
     for i in range(window, n - window - 1):
         if sid[i - window] != sid[i + window]:
             continue  # window crosses a session boundary
-        if require_candle_direction and op[i] > cl[i]:
-            pass  # not bullish -> skip min
-        else:
+        can_min = (not require_candle_direction) or (cl[i] > op[i])
+        if can_min:
             minL = min(cl[i - window : i].min(), op[i - window : i].min())
             minR = min(
                 op[i + 1 : i + window + 1].min(), cl[i + 1 : i + window + 1].min()
@@ -77,9 +80,8 @@ def mark_simple_extrema(
                 ):
                     is_min[i] = 1
 
-        if require_candle_direction and op[i] < cl[i]:
-            pass
-        else:
+        can_max = (not require_candle_direction) or (cl[i] < op[i])
+        if can_max:
             maxL = max(cl[i - window : i].max(), op[i - window : i].max())
             maxR = max(
                 op[i + 1 : i + window + 1].max(), cl[i + 1 : i + window + 1].max()
@@ -114,6 +116,7 @@ def mark_volatility_extrema(
     k_atr: float = 0.5,
     atr_period: int = 14,
     session_aware: bool = True,
+    require_candle_direction: bool = True,
 ) -> pd.DataFrame:
     """Volatility-adaptive extrema labeling.
 
@@ -122,12 +125,19 @@ def mark_volatility_extrema(
     spans a session boundary are skipped – otherwise an intraday low
     could be compared against the opening gap of the next day, which
     has no exploitable meaning.
+
+    When ``require_candle_direction`` is True (default), a local minimum
+    is labelled only if ``close_i > open_i`` and a maximum only if
+    ``close_i < open_i``.  This uses the bar's close **only** when
+    building the training target; it is never used as a feature at
+    decision time (where only ``open_i`` and past bars are available).
     """
     out = df.copy()
     n = len(out)
     is_min = np.zeros(n, dtype=np.int8)
     is_max = np.zeros(n, dtype=np.int8)
     op = out["open"].to_numpy()
+    cl = out["close"].to_numpy()
     hi = out["high"].to_numpy()
     lo = out["low"].to_numpy()
     atr = _atr(out, atr_period)
@@ -142,10 +152,12 @@ def mark_volatility_extrema(
         right_hi = hi[i + 1 : i + window + 1].max()
         thr = k_atr * atr[i]
 
-        if op[i] <= left_lo and op[i] <= right_lo:
+        can_min = (not require_candle_direction) or (cl[i] > op[i])
+        if can_min and op[i] <= left_lo and op[i] <= right_lo:
             if (left_hi - op[i]) >= thr and (right_hi - op[i]) >= thr:
                 is_min[i] = 1
-        if op[i] >= left_hi and op[i] >= right_hi:
+        can_max = (not require_candle_direction) or (cl[i] < op[i])
+        if can_max and op[i] >= left_hi and op[i] >= right_hi:
             if (op[i] - left_lo) >= thr and (op[i] - right_lo) >= thr:
                 is_max[i] = 1
 

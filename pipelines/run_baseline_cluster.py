@@ -38,6 +38,11 @@ def parse_args():
     p.add_argument("--eps", type=float, default=2.0)
     p.add_argument("--n-folds", type=int, default=4)
     p.add_argument("--heavy-features", action="store_true")
+    p.add_argument(
+        "--no-require-candle-direction",
+        action="store_true",
+        help="Label without bullish/bearish close filter.",
+    )
     return p.parse_args()
 
 
@@ -45,7 +50,12 @@ def main():
     args = parse_args()
     t0 = time.time()
     df_raw = load_ohlcv(args.dataset)
-    df = lbl.mark_volatility_extrema(df_raw, k_atr=args.k_atr, session_aware=False)
+    df = lbl.mark_volatility_extrema(
+        df_raw,
+        k_atr=args.k_atr,
+        session_aware=False,
+        require_candle_direction=not args.no_require_candle_direction,
+    )
     counts = lbl.label_counts(df)
     print(counts)
 

@@ -8,11 +8,12 @@
     "label_window": 4,
     "heavy_features": true,
     "n_folds": 5,
-    "periods_per_year": 1638.0,
+    "periods_per_year": 6552.0,
     "out_subdir": null,
     "no_session_aware": false,
     "labels_session_aware": false,
     "drop_edge_extrema": 0,
+    "no_require_candle_direction": false,
     "block_session_start_entry": false
   },
   "labeling": {
@@ -245,7 +246,7 @@
           {
             "n": 1619,
             "n_pos": 3,
-            "threshold": 0.3609561075607892,
+            "threshold": 0.36095610756078905,
             "accuracy": 0.9913526868437307,
             "precision": 0.17647058823529413,
             "recall": 1.0,
@@ -256,7 +257,7 @@
           {
             "n": 1619,
             "n_pos": 5,
-            "threshold": 0.3536511185512414,
+            "threshold": 0.35365111855124143,
             "accuracy": 0.9925880172946263,
             "precision": 0.29411764705882354,
             "recall": 1.0,
@@ -268,7 +269,7 @@
         "overall": {
           "n": 6476,
           "n_pos": 34,
-          "threshold": 0.509893526419374,
+          "threshold": 0.5098935264193741,
           "accuracy": 0.9907350216182829,
           "precision": 0.30303030303030304,
           "recall": 0.5882352941176471,
@@ -276,7 +277,7 @@
           "roc_auc": 0.9914348850375296,
           "pr_auc": 0.23489595497184684
         },
-        "oof_threshold": 0.509893526419374
+        "oof_threshold": 0.5098935264193741
       },
       "max": {
         "name": "random_forest",
@@ -295,7 +296,7 @@
           {
             "n": 1619,
             "n_pos": 4,
-            "threshold": 0.5813309273057039,
+            "threshold": 0.581330927305704,
             "accuracy": 0.9956763434218654,
             "precision": 0.3333333333333333,
             "recall": 0.75,
@@ -317,7 +318,7 @@
           {
             "n": 1619,
             "n_pos": 8,
-            "threshold": 0.7458619178454092,
+            "threshold": 0.7458619178454091,
             "accuracy": 0.9944410129709698,
             "precision": 0.4444444444444444,
             "recall": 0.5,
@@ -467,12 +468,12 @@
   },
   "backtest": {
     "best_model": "random_forest",
-    "threshold_long": 0.509893526419374,
+    "threshold_long": 0.5098935264193741,
     "threshold_short": 0.4691488070891561,
     "strategy": {
       "n_trades": 131,
       "total_return": 0.2190355303260958,
-      "sharpe": 0.49057746998239254,
+      "sharpe": 0.9811549399647851,
       "max_drawdown": -0.09125791512819596,
       "win_rate": 0.5648854961832062,
       "avg_trade_pnl": 0.0016331184111844825,
@@ -485,9 +486,9 @@
     },
     "buy_and_hold": {
       "total_return": 0.14872029636282003,
-      "sharpe": 0.23217540968175274,
+      "sharpe": 0.4643508193635055,
       "max_drawdown": -0.3449243530655725
     }
   },
-  "runtime_sec": 82.21207809448242
+  "runtime_sec": 25.338615655899048
 }

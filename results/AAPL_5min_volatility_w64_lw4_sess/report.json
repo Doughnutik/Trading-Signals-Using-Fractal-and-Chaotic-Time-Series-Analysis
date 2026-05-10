@@ -9,10 +9,11 @@
     "heavy_features": false,
     "n_folds": 5,
     "periods_per_year": 19656.0,
-    "out_subdir": "AAPL_5min_volatility_w64_lw4_sess",
+    "out_subdir": null,
     "no_session_aware": false,
     "labels_session_aware": false,
     "drop_edge_extrema": 0,
+    "no_require_candle_direction": false,
     "block_session_start_entry": false
   },
   "labeling": {
@@ -225,7 +226,7 @@
           {
             "n": 1646,
             "n_pos": 2,
-            "threshold": 0.4042703270416154,
+            "threshold": 0.4042703270416155,
             "accuracy": 0.9993924665856622,
             "precision": 1.0,
             "recall": 0.5,
@@ -236,7 +237,7 @@
           {
             "n": 1646,
             "n_pos": 5,
-            "threshold": 0.1922931349886697,
+            "threshold": 0.19229313498866968,
             "accuracy": 0.9951397326852977,
             "precision": 0.3333333333333333,
             "recall": 0.6,
@@ -275,7 +276,7 @@
           {
             "n": 1646,
             "n_pos": 10,
-            "threshold": 0.08575829313954857,
+            "threshold": 0.08575829313954854,
             "accuracy": 0.965370595382746,
             "precision": 0.14925373134328357,
             "recall": 1.0,
@@ -286,7 +287,7 @@
           {
             "n": 1646,
             "n_pos": 6,
-            "threshold": 0.3800852363070241,
+            "threshold": 0.38008523630702407,
             "accuracy": 0.9957472660996355,
             "precision": 0.4444444444444444,
             "recall": 0.6666666666666666,
@@ -320,7 +321,7 @@
         "overall": {
           "n": 6584,
           "n_pos": 28,
-          "threshold": 0.36603759846763234,
+          "threshold": 0.3660375984676324,
           "accuracy": 0.994228432563791,
           "precision": 0.35294117647058826,
           "recall": 0.42857142857142855,
@@ -328,7 +329,7 @@
           "roc_auc": 0.9884293558790203,
           "pr_auc": 0.31684651219876
         },
-        "oof_threshold": 0.36603759846763234
+        "oof_threshold": 0.3660375984676324
       }
     },
     "lightgbm": {
@@ -459,7 +460,7 @@
   "backtest": {
     "best_model": "random_forest",
     "threshold_long": 0.2405811975377333,
-    "threshold_short": 0.36603759846763234,
+    "threshold_short": 0.3660375984676324,
     "strategy": {
       "n_trades": 64,
       "total_return": 0.20380218090790336,
@@ -480,5 +481,5 @@
       "max_drawdown": -0.15300838328098518
     }
   },
-  "runtime_sec": 21.734230041503906
+  "runtime_sec": 21.771903038024902
 }

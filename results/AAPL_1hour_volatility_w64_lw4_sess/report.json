@@ -13,6 +13,7 @@
     "no_session_aware": false,
     "labels_session_aware": false,
     "drop_edge_extrema": 0,
+    "no_require_candle_direction": false,
     "block_session_start_entry": false
   },
   "labeling": {
@@ -225,7 +226,7 @@
           {
             "n": 1641,
             "n_pos": 19,
-            "threshold": 0.4413303533750311,
+            "threshold": 0.44133035337503107,
             "accuracy": 0.9737964655697745,
             "precision": 0.29310344827586204,
             "recall": 0.8947368421052632,
@@ -275,7 +276,7 @@
           {
             "n": 1641,
             "n_pos": 8,
-            "threshold": 0.8493391132322357,
+            "threshold": 0.849339113232236,
             "accuracy": 0.9945155393053017,
             "precision": 0.4444444444444444,
             "recall": 0.5,
@@ -286,7 +287,7 @@
           {
             "n": 1641,
             "n_pos": 14,
-            "threshold": 0.6686905081882755,
+            "threshold": 0.6686905081882756,
             "accuracy": 0.9823278488726387,
             "precision": 0.2727272727272727,
             "recall": 0.6428571428571429,
@@ -297,7 +298,7 @@
           {
             "n": 1641,
             "n_pos": 13,
-            "threshold": 0.29449769357775113,
+            "threshold": 0.2944976935777512,
             "accuracy": 0.9622181596587447,
             "precision": 0.17333333333333334,
             "recall": 1.0,
@@ -308,7 +309,7 @@
           {
             "n": 1641,
             "n_pos": 21,
-            "threshold": 0.5236594672687023,
+            "threshold": 0.5236594672687022,
             "accuracy": 0.9725776965265083,
             "precision": 0.29310344827586204,
             "recall": 0.8095238095238095,
@@ -320,7 +321,7 @@
         "overall": {
           "n": 6564,
           "n_pos": 56,
-          "threshold": 0.6959370361497165,
+          "threshold": 0.6959370361497166,
           "accuracy": 0.9808043875685558,
           "precision": 0.23484848484848486,
           "recall": 0.5535714285714286,
@@ -328,7 +329,7 @@
           "roc_auc": 0.9785072218807621,
           "pr_auc": 0.2758606638021126
         },
-        "oof_threshold": 0.6959370361497165
+        "oof_threshold": 0.6959370361497166
       }
     },
     "lightgbm": {
@@ -459,7 +460,7 @@
   "backtest": {
     "best_model": "random_forest",
     "threshold_long": 0.3602185143686877,
-    "threshold_short": 0.6959370361497165,
+    "threshold_short": 0.6959370361497166,
     "strategy": {
       "n_trades": 363,
       "total_return": 0.5130310383827013,
@@ -480,5 +481,5 @@
       "max_drawdown": -0.33321752665730864
     }
   },
-  "runtime_sec": 30.828721046447754
+  "runtime_sec": 28.735848903656006
 }

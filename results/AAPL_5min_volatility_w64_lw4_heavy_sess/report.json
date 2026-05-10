@@ -9,10 +9,11 @@
     "heavy_features": true,
     "n_folds": 5,
     "periods_per_year": 19656.0,
-    "out_subdir": "AAPL_5min_volatility_w64_lw4_heavy_sess",
+    "out_subdir": null,
     "no_session_aware": false,
     "labels_session_aware": false,
     "drop_edge_extrema": 0,
+    "no_require_candle_direction": false,
     "block_session_start_entry": false
   },
   "labeling": {
@@ -223,7 +224,7 @@
           {
             "n": 1616,
             "n_pos": 5,
-            "threshold": 0.2612227246000543,
+            "threshold": 0.26122272460005425,
             "accuracy": 0.995049504950495,
             "precision": 0.3333333333333333,
             "recall": 0.6,
@@ -268,7 +269,7 @@
         "overall": {
           "n": 6464,
           "n_pos": 20,
-          "threshold": 0.22084771709086196,
+          "threshold": 0.22084771709086193,
           "accuracy": 0.994894801980198,
           "precision": 0.30303030303030304,
           "recall": 0.5,
@@ -276,7 +277,7 @@
           "roc_auc": 0.9207324643078831,
           "pr_auc": 0.32044484528550876
         },
-        "oof_threshold": 0.22084771709086196
+        "oof_threshold": 0.22084771709086193
       },
       "max": {
         "name": "random_forest",
@@ -295,7 +296,7 @@
           {
             "n": 1616,
             "n_pos": 6,
-            "threshold": 0.3553066987136594,
+            "threshold": 0.35530669871365944,
             "accuracy": 0.9956683168316832,
             "precision": 0.4444444444444444,
             "recall": 0.6666666666666666,
@@ -467,7 +468,7 @@
   },
   "backtest": {
     "best_model": "random_forest",
-    "threshold_long": 0.22084771709086196,
+    "threshold_long": 0.22084771709086193,
     "threshold_short": 0.35364138030506315,
     "strategy": {
       "n_trades": 62,
@@ -489,5 +490,5 @@
       "max_drawdown": -0.15300838328098518
     }
   },
-  "runtime_sec": 80.17526030540466
+  "runtime_sec": 21.318559885025024
 }

@@ -89,9 +89,10 @@
     "k_atr": 0.5,
     "kind": "dbscan",
     "n_clusters": 2,
-    "eps": 3.0,
+    "eps": 2.0,
     "n_folds": 4,
-    "heavy_features": false
+    "heavy_features": false,
+    "no_require_candle_direction": false
   },
-  "runtime_sec": 0.41863393783569336
+  "runtime_sec": 0.6623861789703369
 }

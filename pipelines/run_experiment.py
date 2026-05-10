@@ -95,6 +95,11 @@ def parse_args():
         help="Zero-out positive labels within N bars of a session boundary.",
     )
     p.add_argument(
+        "--no-require-candle-direction",
+        action="store_true",
+        help="Label extrema without bullish/bearish close filter (legacy).",
+    )
+    p.add_argument(
         "--block-session-start-entry",
         action="store_true",
         help="Do not open trades on the first bar after an overnight gap.",
@@ -103,11 +108,13 @@ def parse_args():
 
 
 def build_labels(df: pd.DataFrame, args) -> pd.DataFrame:
+    require_dir = not args.no_require_candle_direction
     if args.labeling == "simple":
         labeled = lbl.mark_simple_extrema(
             df,
             window=args.label_window,
             alpha=args.alpha,
+            require_candle_direction=require_dir,
             session_aware=args.labels_session_aware,
         )
     else:
@@ -116,6 +123,7 @@ def build_labels(df: pd.DataFrame, args) -> pd.DataFrame:
             window=args.label_window,
             k_atr=args.k_atr,
             session_aware=args.labels_session_aware,
+            require_candle_direction=require_dir,
         )
     if args.drop_edge_extrema > 0:
         labeled = lbl.drop_session_edge_extrema(labeled, edge_bars=args.drop_edge_extrema)
@@ -322,6 +330,8 @@ def main():
         f"{'_sess' if session_aware else '_nosess'}"
         f"{'_lsa' if args.labels_session_aware else ''}"
         f"{f'_edge{args.drop_edge_extrema}' if args.drop_edge_extrema else ''}"
+        f"{'_nodir' if args.no_require_candle_direction else ''}"
+        f"{'_blockstart' if args.block_session_start_entry else ''}"
     )
     out_dir = ensure_dir(RESULTS_DIR / subdir)
     with open(out_dir / "report.json", "w") as f:
