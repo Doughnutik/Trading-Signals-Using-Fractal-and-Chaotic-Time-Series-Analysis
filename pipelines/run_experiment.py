@@ -32,6 +32,7 @@ from src import evaluation as ev  # noqa: E402
 from src import labeling as lbl  # noqa: E402
 from src import models as mdl  # noqa: E402
 from src.features import (  # noqa: E402
+    FEATURE_CACHE_BUMP,
     FeatureConfig,
     FULL_GROUPS,
     LIGHT_GROUPS,
@@ -46,7 +47,10 @@ CACHE_DIR = RESULTS_DIR / "_feature_cache"
 def load_or_build_features(df: pd.DataFrame, dataset: str, cfg: FeatureConfig) -> pd.DataFrame:
     ensure_dir(CACHE_DIR)
     sa = "sa1" if cfg.session_aware else "sa0"
-    tag = f"{dataset}_w{cfg.window}_seg{cfg.n_slope_segments}_{sa}_{'_'.join(cfg.groups)}"
+    tag = (
+        f"{dataset}_w{cfg.window}_seg{cfg.n_slope_segments}_{sa}_"
+        f"{'_'.join(cfg.groups)}_{FEATURE_CACHE_BUMP}"
+    )
     path = CACHE_DIR / f"{tag}.parquet"
     if path.exists():
         print(f"[cache] loaded features from {path.name}")
@@ -67,7 +71,14 @@ def parse_args():
         default="volatility",
     )
     p.add_argument("--alpha", type=float, default=0.002)
-    p.add_argument("--k-atr", type=float, default=0.5)
+    p.add_argument("--k-atr", type=float, default=0.25, help="ATR multiplier for labeling swing.")
+    p.add_argument(
+        "--label-pivot",
+        choices=["wick", "open"],
+        default="wick",
+        help='Extremum pivot: "wick" = low/high vs neighbours (denser); '
+        '"open" = stricter open-only pivot (legacy).',
+    )
     p.add_argument(
         "--label-window",
         type=int,
@@ -124,6 +135,7 @@ def build_labels(df: pd.DataFrame, args) -> pd.DataFrame:
             k_atr=args.k_atr,
             session_aware=args.labels_session_aware,
             require_candle_direction=require_dir,
+            pivot=args.label_pivot,
         )
     if args.drop_edge_extrema > 0:
         labeled = lbl.drop_session_edge_extrema(labeled, edge_bars=args.drop_edge_extrema)
@@ -197,22 +209,14 @@ def run_model_cv(
     }
 
 
-def build_signals(proba_long: np.ndarray, proba_short: np.ndarray, thr_l: float, thr_s: float):
-    long_sig = np.where(~np.isnan(proba_long) & (proba_long >= thr_l), 1, 0).astype(bool)
-    short_sig = np.where(~np.isnan(proba_short) & (proba_short >= thr_s), 1, 0).astype(bool)
-    # if both fire on same bar – pick the stronger one
-    both = long_sig & short_sig
-    if both.any():
-        keep_long = (proba_long - thr_l) >= (proba_short - thr_s)
-        long_sig[both & ~keep_long] = False
-        short_sig[both & keep_long] = False
-    return long_sig, short_sig
-
-
 def main():
     args = parse_args()
     t0 = time.time()
-    print(f"[+] dataset={args.dataset} window={args.window} labeling={args.labeling} heavy={args.heavy_features}")
+    print(
+        f"[+] dataset={args.dataset} window={args.window} labeling={args.labeling} "
+        f"heavy={args.heavy_features} k_atr={args.k_atr} pivot={args.label_pivot} "
+        f"label_window={args.label_window}"
+    )
 
     df_raw = load_ohlcv(args.dataset)
     df = build_labels(df_raw, args)
@@ -295,7 +299,7 @@ def main():
     thr_l = thr_min_by_model[best_name]
     thr_s = thr_max_by_model[best_name]
 
-    long_sig, short_sig = build_signals(proba_min, proba_max, thr_l, thr_s)
+    long_sig, short_sig = ev.build_trade_signals(proba_min, proba_max, thr_l, thr_s)
     bt_df = df.loc[idx]
 
     sess = session_boundaries(bt_df)
@@ -310,7 +314,9 @@ def main():
         flatten_overnight=session_aware,
         block_entry_on_session_start=args.block_session_start_entry,
     )
-    bh = ev.buy_and_hold_stats(bt_df, periods_per_year=args.periods_per_year)
+    # Buy & hold on the full sample so the benchmark does not depend on which rows
+    # survive feature NA-drop (must match across configs of the same dataset).
+    bh = ev.buy_and_hold_stats(df_raw, periods_per_year=args.periods_per_year)
     print(f"[+] strategy stats: {bt.stats}")
     print(f"[+] buy & hold:     {bh}")
 
@@ -324,8 +330,11 @@ def main():
 
     results["runtime_sec"] = time.time() - t0
 
+    _k_slug = ("%g" % args.k_atr).replace(".", "p").replace("-", "m")
+    _pv_tag = "w" if args.label_pivot == "wick" else "o"
     subdir = args.out_subdir or (
         f"{args.dataset}_{args.labeling}_w{args.window}_lw{args.label_window}"
+        f"_k{_k_slug}_pv{_pv_tag}"
         f"{'_heavy' if args.heavy_features else ''}"
         f"{'_sess' if session_aware else '_nosess'}"
         f"{'_lsa' if args.labels_session_aware else ''}"

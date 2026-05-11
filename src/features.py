@@ -13,8 +13,9 @@ Feature groups:
 
 ``returns``    log returns, cumulative returns, price-vs-open ratios.
 ``rolling``    rolling mean/std/min/max/skew/kurt of close and log-returns.
-``technical``  RSI, Williams %R, Stochastic K, Bollinger position,
-               ATR-normalised range, SMA/EMA ratios.
+``technical``  RSI, Williams %R, Bollinger position, ATR-normalised range,
+               EMA12/EMA26 ratio, MACD line as scaled (EMA12-EMA26)/open
+               (EMAs from past closes, current bar open for scale).
 ``fractal``    Hurst (R/S), DFA, Higuchi FD, Katz FD, Petrosian FD.
 ``entropy``    Sample, approximate, permutation and spectral entropy.
 ``slopes``     Normalised piecewise-linear slopes of the close series.
@@ -49,6 +50,8 @@ except Exception:  # pragma: no cover
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+# Bump when feature columns change (invalidates ``results/_feature_cache/*.parquet``).
+FEATURE_CACHE_BUMP = "no_stoch_ema12_26_ratio_v1"
 
 # ---------------------------------------------------------------------------
 # basic rolling helpers (close="left": the window does NOT include bar i)
@@ -163,8 +166,6 @@ def technical_features(df: pd.DataFrame, window: int) -> pd.DataFrame:
     ll = lo.shift(1).rolling(14, min_periods=14).min()
     feats["williams_r_14"] = -100.0 * (hh - cl.shift(1)) / (hh - ll)
 
-    # Stochastic K
-    feats["stoch_k_14"] = 100.0 * (cl.shift(1) - ll) / (hh - ll)
 
     # Bollinger z-score on close (20)
     mean_20 = cl.shift(1).rolling(20, min_periods=20).mean()
@@ -172,11 +173,10 @@ def technical_features(df: pd.DataFrame, window: int) -> pd.DataFrame:
     feats["bb_z_20"] = (cl.shift(1) - mean_20) / std_20
     feats["open_bb_z_20"] = (op - mean_20) / std_20
 
-    # SMA / EMA ratios (price vs trend)
-    ema_fast = cl.shift(1).ewm(span=12, adjust=False, min_periods=12).mean()
-    ema_slow = cl.shift(1).ewm(span=26, adjust=False, min_periods=26).mean()
-    feats["ema_fast_over_slow"] = ema_fast / ema_slow - 1.0
-    feats["open_over_ema_slow"] = op / ema_slow - 1.0
+    # Only stationary EMA construct: ratio (levels EMA12/EMA26 are non-stationary).
+    ema12 = cl.shift(1).ewm(span=12, adjust=False, min_periods=12).mean()
+    ema26 = cl.shift(1).ewm(span=26, adjust=False, min_periods=26).mean()
+    feats["ema12_over_ema26"] = ema12 / ema26
 
     # ATR normalised bar range
     prev_close = cl.shift(1)
@@ -192,8 +192,8 @@ def technical_features(df: pd.DataFrame, window: int) -> pd.DataFrame:
     feats["atr14_norm"] = atr_14 / op
     feats["range_prev_over_atr"] = (hi.shift(1) - lo.shift(1)) / atr_14
 
-    # MACD-like
-    feats["macd"] = (ema_fast - ema_slow) / op
+    # Classic MACD line, scale-normalised by current open (EMAs from past closes only).
+    feats["macd"] = (ema12 - ema26) / op
 
     return pd.DataFrame(feats, index=df.index)
 

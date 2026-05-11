@@ -281,3 +281,20 @@ def buy_and_hold_stats(df: pd.DataFrame, periods_per_year: float = 252 * 6.5) ->
         "sharpe": _sharpe(returns, periods_per_year),
         "max_drawdown": _drawdown(eq),
     }
+
+
+def build_trade_signals(
+    proba_long: np.ndarray,
+    proba_short: np.ndarray,
+    thr_l: float,
+    thr_s: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Turn long/short scores into boolean entry arrays (used by experiment + baseline)."""
+    long_sig = np.where(~np.isnan(proba_long) & (proba_long >= thr_l), 1, 0).astype(bool)
+    short_sig = np.where(~np.isnan(proba_short) & (proba_short >= thr_s), 1, 0).astype(bool)
+    both = long_sig & short_sig
+    if both.any():
+        keep_long = (proba_long - thr_l) >= (proba_short - thr_s)
+        long_sig[both & ~keep_long] = False
+        short_sig[both & keep_long] = False
+    return long_sig, short_sig

@@ -11,14 +11,14 @@ Two variants are provided:
     neighborhood of size 4 and a relative threshold ``alpha``.
 
 ``mark_volatility_extrema``
-    A more permissive rule: a bar is a local min if its low (or close) is
-    the lowest over ``window`` bars on each side and the surrounding move
-    exceeds ``k * ATR`` where ATR is an estimate of bar volatility.  This
-    adapts the threshold to the asset/time frame instead of a fixed alpha.
-    By default a minimum also requires ``close > open`` and a maximum
-    ``close < open`` (targets only; not used as features at ``open[i]``).
+    Neighbourhood lows/highs plus ATR swing vs. opposite side.  Pivot for
+    the strict centre comparison is either the bar's ``open`` or its
+    ``low``/``high`` (wick) — wick matches the usual pivot definition and
+    yields more positives than open-only.
 """
 from __future__ import annotations
+
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -113,24 +113,32 @@ def _atr(df: pd.DataFrame, period: int = 14) -> np.ndarray:
 def mark_volatility_extrema(
     df: pd.DataFrame,
     window: int = 4,
-    k_atr: float = 0.5,
+    k_atr: float = 0.25,
     atr_period: int = 14,
     session_aware: bool = True,
     require_candle_direction: bool = True,
+    pivot: Literal["open", "wick"] = "wick",
 ) -> pd.DataFrame:
     """Volatility-adaptive extrema labeling.
 
-    Uses ATR to adapt the threshold instead of a fixed relative alpha.
-    When ``session_aware`` is True, candidate bars whose neighbourhood
-    spans a session boundary are skipped – otherwise an intraday low
-    could be compared against the opening gap of the next day, which
-    has no exploitable meaning.
+    Uses ATR to adapt the swing threshold.  When ``session_aware`` is True,
+    candidate bars whose neighbourhood spans a session boundary are skipped.
 
-    When ``require_candle_direction`` is True (default), a local minimum
-    is labelled only if ``close_i > open_i`` and a maximum only if
-    ``close_i < open_i``.  This uses the bar's close **only** when
-    building the training target; it is never used as a feature at
-    decision time (where only ``open_i`` and past bars are available).
+    ``pivot``
+        * ``"wick"`` (default): local min if ``low[i]`` is the deepest vs
+          neighbour lows on each side (max symmetric with ``high[i]``).
+          This matches the usual fractal definition and is noticeably less
+          strict than ``open``.
+        * ``"open"``: legacy rule — compare ``open[i]`` to neighbour lows/highs
+          (fewer labels; stricter for entry-at-open semantics).
+
+    ``k_atr``
+        If negative, the ATR swing filter is disabled.  If zero, swings are
+        checked against a zero threshold.  Otherwise require move
+        ``≥ k_atr · ATR[i]`` vs. the opposite-side range.
+
+    ``require_candle_direction`` — if True, min only when ``close > open``,
+    max only when ``close < open`` (target construction only).
     """
     out = df.copy()
     n = len(out)
@@ -150,16 +158,42 @@ def mark_volatility_extrema(
         right_lo = lo[i + 1 : i + window + 1].min()
         left_hi = hi[i - window : i].max()
         right_hi = hi[i + 1 : i + window + 1].max()
-        thr = k_atr * atr[i]
+
+        if k_atr < 0:
+            min_swing_ok = True
+            max_swing_ok = True
+        else:
+            thr = k_atr * atr[i]
+            if pivot == "wick":
+                min_swing_ok = (left_hi - lo[i]) >= thr and (
+                    right_hi - lo[i]
+                ) >= thr
+                max_swing_ok = (hi[i] - left_lo) >= thr and (
+                    hi[i] - right_lo
+                ) >= thr
+            else:
+                min_swing_ok = (left_hi - op[i]) >= thr and (
+                    right_hi - op[i]
+                ) >= thr
+                max_swing_ok = (op[i] - left_lo) >= thr and (
+                    op[i] - right_lo
+                ) >= thr
 
         can_min = (not require_candle_direction) or (cl[i] > op[i])
-        if can_min and op[i] <= left_lo and op[i] <= right_lo:
-            if (left_hi - op[i]) >= thr and (right_hi - op[i]) >= thr:
-                is_min[i] = 1
+        if pivot == "wick":
+            ok_min = lo[i] <= left_lo and lo[i] <= right_lo
+        else:
+            ok_min = op[i] <= left_lo and op[i] <= right_lo
+        if can_min and ok_min and min_swing_ok:
+            is_min[i] = 1
+
         can_max = (not require_candle_direction) or (cl[i] < op[i])
-        if can_max and op[i] >= left_hi and op[i] >= right_hi:
-            if (op[i] - left_lo) >= thr and (op[i] - right_lo) >= thr:
-                is_max[i] = 1
+        if pivot == "wick":
+            ok_max = hi[i] >= left_hi and hi[i] >= right_hi
+        else:
+            ok_max = op[i] >= left_hi and op[i] >= right_hi
+        if can_max and ok_max and max_swing_ok:
+            is_max[i] = 1
 
     out["is_min"] = is_min
     out["is_max"] = is_max
