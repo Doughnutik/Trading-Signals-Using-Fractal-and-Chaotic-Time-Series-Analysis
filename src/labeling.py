@@ -1,9 +1,5 @@
 """Local extrema labeling.
 
-The label uses both past and future bars and, when directional filters are
-enabled, the bar's ``close`` vs ``open``---this is target construction only;
-at prediction time features use closed history plus ``open[i]`` only.
-
 Two variants are provided:
 
 ``mark_simple_extrema``
@@ -53,8 +49,7 @@ def mark_simple_extrema(
     require_candle_direction
         If True (default), label a local min only when
         ``close[i] > open[i]`` (long idea) and a max only when
-        ``close[i] < open[i]`` (short idea).  Set False to match older
-        notebooks that used structure alone.
+        ``close[i] < open[i]`` (short idea).
     """
     out = df.copy()
     n = len(out)

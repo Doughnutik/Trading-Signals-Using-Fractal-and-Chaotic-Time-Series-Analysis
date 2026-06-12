@@ -2,16 +2,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
-import pandas as pd
 from sklearn.cluster import DBSCAN, KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from lightgbm import LGBMClassifier
+from xgboost import XGBClassifier
 
 
 def make_logreg(random_state: int = 42) -> Pipeline:
@@ -42,10 +42,6 @@ def make_random_forest(random_state: int = 42) -> RandomForestClassifier:
 
 
 def make_lightgbm(random_state: int = 42, n_pos: int = 1, n_neg: int = 1):
-    try:
-        from lightgbm import LGBMClassifier
-    except Exception as exc:  # pragma: no cover
-        raise RuntimeError("lightgbm is required") from exc
     scale = max(n_neg / max(n_pos, 1), 1.0)
     return LGBMClassifier(
         n_estimators=800,
@@ -62,10 +58,6 @@ def make_lightgbm(random_state: int = 42, n_pos: int = 1, n_neg: int = 1):
 
 
 def make_xgboost(random_state: int = 42, n_pos: int = 1, n_neg: int = 1):
-    try:
-        from xgboost import XGBClassifier
-    except Exception as exc:  # pragma: no cover
-        raise RuntimeError("xgboost is required") from exc
     scale = max(n_neg / max(n_pos, 1), 1.0)
     return XGBClassifier(
         n_estimators=600,
